@@ -1,11 +1,12 @@
 using ZXing.Net.Maui;
+using System.Diagnostics; // For Debug logging
 
 namespace PharmacyInventoryOptimizer;
 
 public partial class ScannerPage : ContentPage
 {
-	public ScannerPage()
-	{
+    public ScannerPage()
+    {
         InitializeComponent();
 
         // Configure specifically for DataMatrix to boost speed and accuracy
@@ -15,26 +16,43 @@ public partial class ScannerPage : ContentPage
             AutoRotate = true,
             Multiple = false
         };
-
     }
+
     protected void BarcodesDetected(object sender, BarcodeDetectionEventArgs e)
     {
-        // Grab the first valid barcode detected
         var result = e.Results?.FirstOrDefault();
         if (result is null) return;
 
-        // Pause detection to avoid firing this event 30 times a second
         barcodeReader.IsDetecting = false;
-
-        // The raw GS1 string (e.g., 01003123456789061725123110A1B2C3)
         string rawGs1Data = result.Value;
 
-        // Route back to the main thread for UI updates or navigation
         Dispatcher.DispatchAsync(async () =>
         {
-            await DisplayAlert("Barcode Captured", rawGs1Data, "OK");
+            Gs1Data parsedData = Gs1Parser.Parse(rawGs1Data);
 
-            // TODO: Pass 'rawGs1Data' into the GS1 Parser to extract the exact expiration date 
+            // --- ENFORCE DSCSA COMPLIANCE ---
+            if (!parsedData.IsDscsaCompliant)
+            {
+                // Reject the scan, alert the user, and re-enable the scanner
+                await DisplayAlert(
+                    "DSCSA Warning",
+                    "This barcode is missing required serialization data (NDC, Lot, SN, or EXP) and is non-compliant.",
+                    "Dismiss"
+                );
+
+                barcodeReader.IsDetecting = true;
+                return;
+            }
+
+            // Output the extracted NDC, not the raw GTIN
+            string formattedMessage = $"NDC: {parsedData.Ndc}\n" +
+                                      $"LOT: {parsedData.Lot}\n" +
+                                      $"S/N: {parsedData.SerialNumber}\n" +
+                                      $"EXP: {parsedData.ExpirationDate?.ToString("MM/dd/yyyy")}";
+
+            await DisplayAlert("Compliant Item Logged", formattedMessage, "OK");
+
+            // TODO: Insert into database using parsedData.Ndc
 
             // Resume scanning when ready
             // barcodeReader.IsDetecting = true;
