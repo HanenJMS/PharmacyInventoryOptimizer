@@ -1,5 +1,5 @@
 using ZXing.Net.Maui;
-using System.Diagnostics; // For Debug logging
+using Microsoft.Maui.Devices; // Needed for HapticFeedback
 
 namespace PharmacyInventoryOptimizer;
 
@@ -9,7 +9,6 @@ public partial class ScannerPage : ContentPage
     {
         InitializeComponent();
 
-        // Configure specifically for DataMatrix to boost speed and accuracy
         barcodeReader.Options = new BarcodeReaderOptions
         {
             Formats = BarcodeFormat.DataMatrix,
@@ -23,28 +22,31 @@ public partial class ScannerPage : ContentPage
         var result = e.Results?.FirstOrDefault();
         if (result is null) return;
 
+        // VIBRATE the phone immediately so you know it read something
+        HapticFeedback.Default.Perform(HapticFeedbackType.Click);
+
         barcodeReader.IsDetecting = false;
         string rawGs1Data = result.Value;
 
         Dispatcher.DispatchAsync(async () =>
         {
+            // Update the UI text immediately
+            StatusLabel.Text = "Barcode Detected! Processing...";
+            StatusLabel.TextColor = Colors.LightGreen;
+
             Gs1Data parsedData = Gs1Parser.Parse(rawGs1Data);
 
-            // --- ENFORCE DSCSA COMPLIANCE ---
             if (!parsedData.IsDscsaCompliant)
             {
-                // Reject the scan, alert the user, and re-enable the scanner
-                await DisplayAlert(
-                    "DSCSA Warning",
-                    "This barcode is missing required serialization data (NDC, Lot, SN, or EXP) and is non-compliant.",
-                    "Dismiss"
-                );
+                await DisplayAlert("DSCSA Warning", "Missing required serialization data.", "Dismiss");
 
+                // Reset UI
+                StatusLabel.Text = "Looking for DataMatrix...";
+                StatusLabel.TextColor = Colors.White;
                 barcodeReader.IsDetecting = true;
                 return;
             }
 
-            // Output the extracted NDC, not the raw GTIN
             string formattedMessage = $"NDC: {parsedData.Ndc}\n" +
                                       $"LOT: {parsedData.Lot}\n" +
                                       $"S/N: {parsedData.SerialNumber}\n" +
@@ -52,10 +54,10 @@ public partial class ScannerPage : ContentPage
 
             await DisplayAlert("Compliant Item Logged", formattedMessage, "OK");
 
-            // TODO: Insert into database using parsedData.Ndc
-
-            // Resume scanning when ready
-            // barcodeReader.IsDetecting = true;
+            // Reset UI for the next scan
+            StatusLabel.Text = "Looking for DataMatrix...";
+            StatusLabel.TextColor = Colors.White;
+            // barcodeReader.IsDetecting = true; // Uncomment to loop
         });
     }
 }

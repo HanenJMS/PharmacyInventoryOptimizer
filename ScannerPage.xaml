@@ -8,16 +8,19 @@
         <Grid>
             <zxing:CameraBarcodeReaderView 
             x:Name="barcodeReader"
-            IsDetecting="True"
             BarcodesDetected="BarcodesDetected" />
 
-            <Label Text="Align DataMatrix inside the view"
-               TextColor="White"
-               BackgroundColor="#88000000"
-               HorizontalOptions="Center"
-               VerticalOptions="End"
-               Margin="20"
-               Padding="10" />
+            <Border VerticalOptions="End" 
+                Margin="20,50" 
+                Padding="15" 
+                BackgroundColor="#80000000" 
+                StrokeShape="RoundRectangle 10">
+                <Label x:Name="StatusLabel" 
+                   Text="Looking for DataMatrix..." 
+                   TextColor="White" 
+                   HorizontalOptions="Center" 
+                   FontAttributes="Bold"/>
+            </Border>
         </Grid>
     </VerticalStackLayout>
 </ContentPage>
