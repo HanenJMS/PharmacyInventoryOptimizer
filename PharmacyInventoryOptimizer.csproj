@@ -73,4 +73,10 @@
 		<PackageReference Include="ZXing.Net.Maui.Controls" Version="0.9.0" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <MauiXaml Update="ScannerPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	</ItemGroup>
+
 </Project>
