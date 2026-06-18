@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using ZXing.Net.Maui.Controls;
-
 namespace PharmacyInventoryOptimizer
 {
     public static class MauiProgram

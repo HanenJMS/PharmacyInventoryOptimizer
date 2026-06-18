@@ -1,5 +1,6 @@
-using ZXing.Net.Maui;
 using Microsoft.Maui.Devices; // Needed for HapticFeedback
+using ZXing.Net.Maui;
+using ZXing.Net.Maui.Controls;
 
 namespace PharmacyInventoryOptimizer;
 
@@ -11,10 +12,19 @@ public partial class ScannerPage : ContentPage
 
         barcodeReader.Options = new BarcodeReaderOptions
         {
-            Formats = BarcodeFormat.DataMatrix,
+            Formats = BarcodeFormats.OneDimensional,
             AutoRotate = true,
-            Multiple = false
+            Multiple = true,
+            DelayBetweenAnalyzingFrames = 150,
+            InitialDelayBeforeAnalyzingFrames = 300,
+            DelayBetweenContinuousScans = 1000,
+            CameraResolutionSelector = availableResolutions =>
+              availableResolutions
+                .OrderBy(resolution => Math.Abs((resolution.Width * resolution.Height) - (1280 * 720)))
+                .ThenBy(resolution => Math.Abs(resolution.Width - 1280) + Math.Abs(resolution.Height - 720))
+                .First()
         };
+
     }
 
     protected void BarcodesDetected(object sender, BarcodeDetectionEventArgs e)
